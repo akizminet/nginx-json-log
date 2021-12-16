@@ -7,9 +7,6 @@ CORE_INCS="$CORE_INCS $ngx_module_incs"
 
 NGX_ADDON_SRCS="$NGX_ADDON_SRCS $ngx_addon_dir/src/ngx_http_json_log_module.c"
 
-STREAM_MODULES="$STREAM_MODULES ngx_stream_json_log_module"
-HTTP_AUX_FILTER_MODULES="$HTTP_AUX_FILTER_MODULES ngx_http_json_log_module"
-
 #
 # rdkafka
 #
@@ -29,15 +26,18 @@ fi
 
 CORE_LIBS="$CORE_LIBS -ljansson"
 
-have_stream="0"
-case $NGX_CONFIGURE in
-  *"--with-stream"*)
-    STREAM_MODULES="$STREAM_MODULES ngx_stream_json_log_module";
-    echo " + ngx_json_log: stream support"
-    have_stream="1"
-    ;;
-esac
+if [ -n "$ngx_module_link" ]; then
+    ngx_module_type=HTTP_AUX_FILTER
+    ngx_module_name="ngx_http_json_log_module"
+    ngx_module_deps=$NGX_ADDON_DEPS
+    ngx_module_incs="$CORE_INCS"
+    ngx_module_srcs="$NGX_ADDON_SRCS"
+    ngx_module_libs="$CORE_LIBS"
 
-have="NGX_HAVE_STREAM"
-value=$have_stream
-. auto/define
+    . auto/module
+else
+
+STREAM_MODULES="$STREAM_MODULES ngx_stream_json_log_module"
+HTTP_AUX_FILTER_MODULES="$HTTP_AUX_FILTER_MODULES ngx_http_json_log_module"
+
+fi

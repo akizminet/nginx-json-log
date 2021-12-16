@@ -19,7 +19,7 @@ RUN apk add --no-cache pcre
 RUN apk add --no-cache jansson jansson-dev
 RUN apk add --no-cache librdkafka librdkafka-dev
 RUN apk add --no-cache git
-RUN apk add --no-cache mercurial
+RUN apk add --no-cache curl
 
 RUN mkdir -p /build
 
@@ -30,8 +30,8 @@ RUN git clone ${GIT_LOCATION}
 RUN cd nginx-json-log && git checkout ${GIT_BRANCH}
 
 # Clone from nginx
-RUN hg clone http://hg.nginx.org/nginx
-
+# RUN hg clone http://hg.nginx.org/nginx
+RUN curl -fSL https://nginx.org/download/nginx-1.20.2.tar.gz -o nginx.tar.gz && rm -rf nginx && mkdir -p nginx && tar -zxC nginx --strip=1 -f nginx.tar.gz
 WORKDIR /build/nginx
 
 RUN apk add --no-cache gcc
@@ -40,7 +40,7 @@ RUN apk add --no-cache pcre-dev
 RUN apk add --no-cache zlib-dev
 RUN apk add --no-cache perl-dev
 
-RUN auto/configure --with-cc=/usr/bin/gcc --add-module=/build/nginx-json-log --with-debug --with-mail --with-stream --with-ld-opt="-Wl,-E"
+RUN ./configure --with-cc=/usr/bin/gcc --add-module=/build/nginx-json-log --with-debug --with-mail --with-stream --with-ld-opt="-Wl,-E"
 RUN cat objs/ngx_modules.c | awk '{ sub("\"ngx_http_json_log_module\",", "");  sub("\"ngx_http_header_filter_module\"", "\"ngx_http_json_log_module\", \"ngx_http_header_filter_module\""); print}' > objs/ngx_modules.c.dat && mv objs/ngx_modules.c.dat objs/ngx_modules.c
 RUN make install
 
@@ -51,7 +51,7 @@ RUN rm -rf /build
 
 # Remove pacakges
 RUN apk del git
-RUN apk del mercurial
+RUN apk del curl
 RUN apk del gcc
 RUN apk del alpine-sdk
 RUN apk del pcre-dev
@@ -59,6 +59,6 @@ RUN apk del zlib-dev
 RUN apk del jansson-dev
 RUN apk del librdkafka-dev
 RUN apk del zlib-dev
-
-CMD /usr/local/nginx/sbin/nginx
+EXPOSE 80
+CMD ["/usr/local/nginx/sbin/nginx","-g","daemon off;"]
 WORKDIR /usr/local/nginx/conf
